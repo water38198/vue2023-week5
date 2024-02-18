@@ -51,7 +51,6 @@ function getCarts() {
 }
 function showModal(product) {
   tempProduct.value = product;
-  console.log(tempProduct.value)
   productModal.value.dialog.showModal()
 }
 function addToCart(product_id, qty = 1) {
@@ -65,6 +64,14 @@ function addToCart(product_id, qty = 1) {
     .then(() => {
       getCarts();
       productModal.value.dialog.close();
+      Swal.fire({
+        title: "加入購物車成功",
+        icon: "success",
+        toast: true,
+        position: "bottom-end",
+        timer: "1500",
+        showConfirmButton: false
+      })
     })
     .catch(err => {
       console.log(err)
@@ -80,8 +87,7 @@ const updateCart = debounce((product_id, qty = 1) => {
       qty
     }
   })
-    .then(res => {
-      console.log(res)
+    .then(() => {
       getCarts();
     })
     .catch(err => {
@@ -100,8 +106,7 @@ function debounce(fn) {
 function deleteCart(id) {
   loadingItems.value.push(id);
   axios.delete(`${VITE_URL}/v2/api/${VITE_PATH}/cart/${id}`)
-    .then(res => {
-      console.log(res)
+    .then(() => {
       getCarts()
     }).catch(err => {
       console.log(err);
