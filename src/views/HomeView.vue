@@ -11,7 +11,7 @@ const productsData = ref();
 const cartData = ref({});
 const productModal = ref();
 const tempProduct = ref({});
-const loadingItem = ref("");
+const loadingItems = ref([]);
 const formRef = ref();
 const orderForm = ref({
   user: {
@@ -24,7 +24,7 @@ const orderForm = ref({
 });
 
 function getProducts() {
-  loadingItem.value = "fullPage"
+  loadingItems.value.push("fullPage")
   axios.get(`${VITE_URL}/v2/api/${VITE_PATH}/products/all`)
     .then(res => {
       productsData.value = res.data.products;
@@ -33,11 +33,11 @@ function getProducts() {
       console.log(err)
     })
     .finally(() => {
-      loadingItem.value = ""
+      loadingItems.value.splice(loadingItems.value.indexOf("fullPage"), 1)
     })
 }
 function getCarts() {
-  loadingItem.value = "cart"
+  loadingItems.value.push("cart")
   axios.get(`${VITE_URL}/v2/api/${VITE_PATH}/cart`)
     .then(res => {
       cartData.value = res.data.data;
@@ -46,7 +46,7 @@ function getCarts() {
       console.log(err)
     })
     .finally(() => {
-      loadingItem.value = ""
+      loadingItems.value.splice(loadingItems.value.indexOf("cart"), 1)
     })
 }
 function showModal(product) {
@@ -55,7 +55,7 @@ function showModal(product) {
   productModal.value.dialog.showModal()
 }
 function addToCart(product_id, qty = 1) {
-  loadingItem.value = product_id;
+  loadingItems.value.push(product_id);
   axios.post(`${VITE_URL}/v2/api/${VITE_PATH}/cart`, {
     data: {
       product_id,
@@ -70,7 +70,7 @@ function addToCart(product_id, qty = 1) {
       console.log(err)
     })
     .finally(() => {
-      loadingItem.value = "";
+      loadingItems.value.splice(loadingItems.value.indexOf(product_id), 1)
     })
 }
 const updateCart = debounce((product_id, qty = 1) => {
@@ -98,7 +98,7 @@ function debounce(fn) {
   };
 }
 function deleteCart(id) {
-  loadingItem.value = id;
+  loadingItems.value.push(id);
   axios.delete(`${VITE_URL}/v2/api/${VITE_PATH}/cart/${id}`)
     .then(res => {
       console.log(res)
@@ -106,7 +106,7 @@ function deleteCart(id) {
     }).catch(err => {
       console.log(err);
     }).finally(() => {
-      loadingItem.value = ""
+      loadingItems.value.splice(loadingItems.value.indexOf(id), 1)
     })
 }
 // VeeValidation 手機驗證
@@ -123,7 +123,7 @@ function submitOrder() {
     })
     return
   }
-  loadingItem.value = "order"
+  loadingItems.value.push("order")
   axios.post(`${VITE_URL}/v2/api/${VITE_PATH}/order`, { data: orderForm.value })
     .then(res => {
       Swal.fire({
@@ -137,7 +137,7 @@ function submitOrder() {
       console.log(err)
     })
     .finally(() => {
-      loadingItem.value = ""
+      loadingItems.value.splice(loadingItems.value.indexOf("order"), 1)
     })
 }
 onMounted(() => {
@@ -147,7 +147,7 @@ onMounted(() => {
 </script>
 <template>
   <main>
-    <Loading :active="loadingItem === 'fullPage'" :is-full-page="true" transition="fade" />
+    <Loading :active="loadingItems.includes('fullPage')" :fullPage="true" transition="fade" />
     <div class="container mx-a">
       <!-- 產品列表 -->
       <table class="w-100% mt-6 mb-4">
@@ -179,23 +179,25 @@ onMounted(() => {
               <div>
                 <button type="button"
                   class="bg-transparent text-#6c757d px2 py-1 border-(1 r-0 solid #6c757d) rd-(tl bl) hover:(bg-#6c757d text-white cursor-pointer) "
-                  @click="showModal(product)" :class="{ 'op-50 cursor-not-allowed relative': loadingItem === product.id }"
-                  :disabled="loadingItem === product.id">
+                  @click="showModal(product)"
+                  :class="{ 'op-50 cursor-not-allowed relative': loadingItems.includes(product.id) }"
+                  :disabled="loadingItems.includes(product.id)">
                   <div
                     class="i-svg-spinners:12-dots-scale-rotate absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                    v-if="loadingItem === product.id"></div>
+                    v-if="loadingItems.includes(product.id)"></div>
                   <span>
                     查看更多
                   </span>
                 </button>
                 <button type="button"
                   class="bg-transparent text-red px2 py-1 border-(1 solid red) rd-(tr br) hover:(bg-red text-white cursor-pointer) "
-                  @click="addToCart(product.id)" :class="{ ' cursor-not-allowed relative': loadingItem === product.id }"
-                  :disabled="loadingItem === product.id">
+                  @click="addToCart(product.id)"
+                  :class="{ ' cursor-not-allowed relative': loadingItems.includes(product.id) }"
+                  :disabled="loadingItems.includes(product.id)">
                   <div
                     class="i-svg-spinners:12-dots-scale-rotate absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                    v-if="loadingItem === product.id"></div>
-                  <span :class="{ 'op-50': loadingItem === product.id }">加到購物車</span>
+                    v-if="loadingItems.includes(product.id)"></div>
+                  <span :class="{ 'op-50': loadingItems.includes(product.id) }">加到購物車</span>
                 </button>
               </div>
             </td>
@@ -211,7 +213,7 @@ onMounted(() => {
               class="bg-transparent text-red px-3 py-1.5 border-(1 solid red) rd hover:(bg-red text-white cursor-pointer)">清空購物車</button>
           </div>
           <table class="w-100% relative">
-            <Loading :active="loadingItem === 'cart'" :is-full-page="false" transition="fade" />
+            <Loading :active="loadingItems.includes('cart')" :is-full-page="false" transition="fade" />
             <thead>
               <tr>
                 <th></th>
@@ -226,11 +228,11 @@ onMounted(() => {
                   <td>
                     <button type="button"
                       class="bg-transparent text-red px2 py-1 border-(1 solid red) rd hover:(bg-red text-white cursor-pointer)"
-                      :class="{ ' cursor-not-allowed relative': loadingItem === item.id }"
-                      :disabled="loadingItem === item.id" @click="deleteCart(item.id)">
+                      :class="{ ' cursor-not-allowed relative': loadingItems.includes(item.id) }"
+                      :disabled="loadingItems.includes(item.id)" @click="deleteCart(item.id)">
                       <div
                         class="i-svg-spinners:12-dots-scale-rotate absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                        v-if="loadingItem === item.id"></div>
+                        v-if="loadingItems.includes(item.id)"></div>
                       X
                     </button>
                   </td>
@@ -275,7 +277,7 @@ onMounted(() => {
 
       <!-- 表單 -->
       <div class="mb-12 relative">
-        <Loading :active="loadingItem === 'order'" :is-full-page="false" />
+        <Loading :active="loadingItems.includes('order')" :is-full-page="false" />
         <VForm class="w-50% mx-a" v-slot="{ errors }" @submit="submitOrder" ref="formRef">
           <div class="mb-4">
             <label for="email" class="inline-block mb-2">Email</label>
